@@ -1,0 +1,38 @@
+{
+  "name": "myacademy",
+  "version": "1.0.0",
+  "main": "dist/server/index.js",
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "dev:web": "npm run dev --prefix web",
+    "build": "tsc -p tsconfig.json",
+    "build:web": "npm run build --prefix web",
+    "start": "node dist/server/index.js",
+    "typecheck": "tsc --noEmit",
+    "typecheck:web": "npm run typecheck --prefix web",
+    "lint:web": "npm run lint --prefix web",
+    "verify:web": "npm run typecheck:web && npm run lint:web",
+    "test": "tsx --test src/server/tests/**/*.test.ts",
+    "test:e2e": "npm run test:e2e --prefix web"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "MyAcademy backend scaffold",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.104.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemailer": "^8.0.5",
+    "pdfkit": "^0.18.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.0",
+    "@types/nodemailer": "^8.0.0",
+    "@types/pdfkit": "^0.17.6",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

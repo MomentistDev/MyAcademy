@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: myacademy-api
+    runtime: node
+    rootDir: .
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOW_AUTH_DEV_HEADERS
+        value: "0"
+      - key: MAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: CHIP_COLLECT_GATEWAY_BASE_URL
+        sync: false
+      - key: CHIP_COLLECT_API_KEY
+        sync: false
+      - key: CHIP_COLLECT_BRAND_ID
+        sync: false
+      - key: CHIP_COLLECT_PRICE_GROWTH_CENTS
+        sync: false
+      - key: CHIP_COLLECT_PRICE_ENTERPRISE_CENTS
+        sync: false
+      - key: CHIP_COLLECT_CURRENCY
+        sync: false
+      - key: PUBLIC_WEB_APP_URL
+        sync: false
+      - key: CHIP_COLLECT_WEBHOOK_PUBLIC_KEY
+        sync: false
+      - key: CHIP_COLLECT_WEBHOOK_SKIP_SIGNATURE_VERIFY
+        value: "0"
