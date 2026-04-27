@@ -54,6 +54,7 @@ export async function handleChipCollectWebhook(req: Request, res: Response, supa
 
   const eventType = typeof payload.event_type === "string" ? payload.event_type : undefined;
   const reference = typeof payload.reference === "string" ? payload.reference : undefined;
+  console.info("[chip webhook] received", { eventType: eventType ?? null, reference: reference ?? null });
 
   if (eventType === "purchase.paid" && reference?.startsWith(REF_PREFIX)) {
     const rest = reference.slice(REF_PREFIX.length);
@@ -65,6 +66,8 @@ export async function handleChipCollectWebhook(req: Request, res: Response, supa
         const { error } = await supabase.from("organizations").update({ plan_tier: plan }).eq("id", orgId);
         if (error) {
           console.error("[chip webhook] plan update failed:", error.message);
+        } else {
+          console.info("[chip webhook] plan updated", { orgId, plan, reference });
         }
       }
     }

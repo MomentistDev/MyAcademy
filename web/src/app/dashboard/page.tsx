@@ -5,6 +5,7 @@ import { learningDashboardUrl } from "@/lib/learning-dashboard-url";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "../login/actions";
+import { startChipCheckoutAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -17,9 +18,18 @@ type ApiMembership = {
   organizations: { slug: string; name: string } | null;
 };
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const session = await getApiSession();
   if (!session) redirect("/login");
+  const sp = (await searchParams) ?? {};
+  const errorMessage = typeof sp.error === "string" ? sp.error : undefined;
+  const chipFlag = typeof sp.chip === "string" ? sp.chip : undefined;
+  const chipStatus = typeof sp.status === "string" ? sp.status : undefined;
+  const chipPlan = typeof sp.plan === "string" ? sp.plan : undefined;
 
   const membershipsRes = await apiGetJson<{ memberships: ApiMembership[] }>(session, "/api/me/memberships");
 
@@ -27,6 +37,7 @@ export default async function DashboardPage() {
   const hasStaffMembership = memberships.some((m) => m.role === "org_admin" || m.role === "trainer");
   const firstMembershipOrgId = memberships[0]?.organization_id;
   const firstStaffOrgId = memberships.find((m) => m.role === "org_admin" || m.role === "trainer")?.organization_id;
+  const firstBillingOrgId = memberships.find((m) => m.role === "org_admin")?.organization_id;
   const firstLearnerOrgId = memberships.find((m) => m.role === "learner")?.organization_id;
   const staffOrganizationIds = [
     ...new Set(
@@ -43,6 +54,14 @@ export default async function DashboardPage() {
       ),
     ),
   ]);
+
+  const billingRes =
+    firstBillingOrgId != null
+      ? await apiGetJson<{ organizationId: string; currentPlan: "starter" | "growth" | "enterprise"; updatedAt: string }>(
+          session,
+          `/api/org/billing/status?${new URLSearchParams({ organizationId: firstBillingOrgId }).toString()}`,
+        )
+      : null;
 
   const unread = unreadRes.ok ? unreadRes.data.unreadCount : 0;
   const pendingReviewCount =
@@ -69,6 +88,24 @@ export default async function DashboardPage() {
           <span className="font-medium text-zinc-900">{session.userEmail ?? "your account"}</span>
         </p>
       </header>
+
+      {errorMessage ? (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{errorMessage}</p>
+      ) : null}
+
+      {chipFlag === "1" && chipStatus ? (
+        <p
+          className={
+            chipStatus === "success"
+              ? "rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"
+              : "rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          }
+        >
+          {chipStatus === "success"
+            ? `Payment flow returned success${chipPlan ? ` for ${chipPlan}` : ""}.`
+            : `Payment flow returned failure${chipPlan ? ` for ${chipPlan}` : ""}.`}
+        </p>
+      ) : null}
 
       <section className="rounded-lg border border-zinc-200 bg-white p-6 text-sm text-zinc-700 shadow-sm">
         <p className="mb-3 font-medium text-zinc-900">API session (Express)</p>
@@ -101,6 +138,44 @@ export default async function DashboardPage() {
           <p className="text-zinc-600">No memberships returned from the API.</p>
         )}
       </section>
+
+      {firstBillingOrgId ? (
+        <section className="rounded-lg border border-zinc-200 bg-white p-6 text-sm text-zinc-700 shadow-sm">
+          <p className="mb-3 font-medium text-zinc-900">Billing (CHIP Collect)</p>
+          {billingRes?.ok ? (
+            <p className="mb-4 text-zinc-700">
+              Current plan: <span className="font-semibold text-zinc-900">{billingRes.data.currentPlan}</span>
+            </p>
+          ) : (
+            <p className="mb-4 text-amber-700">
+              Could not load billing status from API
+              {billingRes ? ` (HTTP ${billingRes.status})` : ""}.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <form action={startChipCheckoutAction}>
+              <input type="hidden" name="organizationId" value={firstBillingOrgId} />
+              <input type="hidden" name="targetPlan" value="growth" />
+              <button
+                type="submit"
+                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-50"
+              >
+                Upgrade to Growth
+              </button>
+            </form>
+            <form action={startChipCheckoutAction}>
+              <input type="hidden" name="organizationId" value={firstBillingOrgId} />
+              <input type="hidden" name="targetPlan" value="enterprise" />
+              <button
+                type="submit"
+                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-50"
+              >
+                Upgrade to Enterprise
+              </button>
+            </form>
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-sm text-zinc-700">
         <p className="mb-2 font-medium text-zinc-900">Postgres RLS</p>

@@ -301,6 +301,17 @@ app.post("/api/org/billing/chip/checkout", async (req, res, next) => {
   }
 });
 
+app.get("/api/org/billing/status", async (req, res, next) => {
+  try {
+    const { organizationId } = orgIdQuerySchema.parse(req.query);
+    const ctx = await resolveAuthContext(req, organizationId);
+    const result = await getHandlers().getOrganizationBillingStatus(ctx, { organizationId });
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/public/certificates/verify", async (req, res, next) => {
   try {
     const raw: { credentialCode?: string; organizationSlug?: string } = {

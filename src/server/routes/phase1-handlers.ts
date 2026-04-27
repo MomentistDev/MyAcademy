@@ -331,6 +331,10 @@ export interface CreateChipCollectCheckoutInput {
   targetPlan: "growth" | "enterprise";
 }
 
+export interface GetOrganizationBillingStatusInput {
+  organizationId: Uuid;
+}
+
 function publicWebAppBaseUrl(): string {
   const raw =
     process.env.PUBLIC_WEB_APP_URL?.trim() ||
@@ -2326,6 +2330,33 @@ export class Phase1Handlers {
 
     const { id, checkoutUrl } = await chipCollectCreatePurchase(body);
     return { purchaseId: id, checkoutUrl };
+  }
+
+  async getOrganizationBillingStatus(
+    ctx: AuthContext,
+    input: GetOrganizationBillingStatusInput,
+  ): Promise<{ organizationId: string; currentPlan: "starter" | "growth" | "enterprise"; updatedAt: string }> {
+    requirePermission(ctx, "subscription.manage");
+    requireTenantAccess(ctx, input.organizationId);
+
+    const { data, error } = await this.supabase
+      .from("organizations")
+      .select("id, plan_tier, updated_at")
+      .eq("id", input.organizationId)
+      .single();
+
+    if (error || !data) {
+      throw new Error("Organization not found.");
+    }
+
+    const tier = data.plan_tier as string | null | undefined;
+    const currentPlan: "starter" | "growth" | "enterprise" =
+      tier === "growth" || tier === "enterprise" ? tier : "starter";
+    return {
+      organizationId: data.id as string,
+      currentPlan,
+      updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
+    };
   }
 
   async listMyOnboardingProgress(

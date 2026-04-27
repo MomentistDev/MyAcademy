@@ -75,6 +75,8 @@ Endpoints:
 - `GET /api/org/memberships?organizationId=`
 - `GET /api/org/onboarding-templates?organizationId=`
 - `GET /api/org/audit-logs?organizationId=&limit=` (org admin + trainer; `audit.read`)
+- `POST /api/org/billing/chip/checkout` (`{ organizationId, targetPlan }` where `targetPlan` is `growth | enterprise`)
+- `GET /api/org/billing/status?organizationId=` (`subscription.manage`)
 
 ### Onboarding due dates and overdue
 
